@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mason City Hotel Prices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0b0e17;
+  --bg-card: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.08);
+  --text: #e8edf5;
+  --text-dim: #8892a4;
+  --accent: #f0c040;
+  --green: #34d399;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --radius: 16px;
+}
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: -40%;
+  left: -20%;
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(ellipse, rgba(240,192,64,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -30%;
+  right: -20%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(ellipse, rgba(96,165,250,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.header {
+  position: relative;
+  z-index: 1;
+  padding: 32px 24px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  background: rgba(11,14,23,0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #f0c040, #f5a623);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header .subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-weight: 400;
+}
+.header .status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: pulse 2s ease-in-out infinite;
+}
+.status-dot.error { background: var(--red); }
+.status-dot.loading { background: var(--accent); animation: pulse 0.6s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.status-item { display:flex; align-items:center; gap:4px; }
+.countdown { font-variant-numeric:tabular-nums; }
+.refresh-btn,.clear-all-btn {
+  background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text);
+  padding:6px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-family:inherit; transition:all .2s;
+}
+.refresh-btn:hover{background:rgba(255,255,255,.12)}
+.refresh-btn:disabled{opacity:.4;cursor:not-allowed}
+.clear-all-btn{color:var(--red);border-color:rgba(248,113,113,.2)}
+.clear-all-btn:hover{background:rgba(248,113,113,.12)}
+.container{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;position:relative;transition:all .3s ease;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;flex-direction:column}
+.card:hover{border-color:rgba(255,255,255,.15);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.card.owned{border-color:rgba(240,192,64,.2);background:linear-gradient(135deg,rgba(240,192,64,.04),rgba(240,192,64,.01))}
+.card.owned::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);border-radius:var(--radius) var(--radius) 0 0}
+.badge{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:6px;background:rgba(240,192,64,.15);color:var(--accent);margin-bottom:8px;width:fit-content}
+.card-name{font-size:16px;font-weight:600;line-height:1.3;margin-bottom:10px;color:var(--text)}
+.adult-section{border-radius:8px;background:rgba(255,255,255,.03);padding:8px 10px;margin-top:6px}
+.adult-section:first-child{margin-top:0}
+.adult-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:var(--text-dim);margin-bottom:4px}
+.room-row{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:4px;font-size:13px}
+.room-row + .room-row{border-top:1px solid rgba(255,255,255,.04)}
+.room-type{font-size:11px;font-weight:600;color:var(--text-dim);min-width:42px;text-transform:uppercase}
+.room-price{font-weight:700;font-size:15px;color:var(--text);letter-spacing:-.3px}
+.room-unit{font-size:10px;color:var(--text-dim);font-weight:400}
+.room-change{font-size:10px;font-weight:500;display:inline-flex;align-items:center;gap:1px}
+.room-change.up{color:var(--green)}
+.room-change.down{color:var(--red)}
+.room-change.same{color:var(--text-dim)}
+.room-row.below-owned .room-price{color:var(--red)}
+.room-row.below-owned .room-type{color:var(--red)}
+.room-link{margin-left:auto;color:var(--blue);text-decoration:none;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(96,165,250,.1);transition:all .2s;white-space:nowrap;line-height:1.5}
+.room-link:hover{background:rgba(96,165,250,.25);color:#93c5fd}
+.week-prices{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.week-prices-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:var(--text-dim);margin-bottom:6px}
+.week-prices-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:4px}
+.week-day{background:rgba(255,255,255,.03);border-radius:6px;padding:5px 6px;text-align:center}
+.week-day-label{font-size:9px;color:var(--text-dim);line-height:1.2}
+.week-day-price{font-size:13px;font-weight:700;color:var(--text);margin-top:2px}
+.week-day.missing .week-day-price{color:var(--text-dim);font-weight:500;font-size:11px}
+.week-day-change{font-size:8px;font-weight:600;margin-top:1px;line-height:1}
+.week-day-change.up{color:var(--green)}
+.week-day-change.down{color:var(--red)}
+.card-meta{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text-dim)}
+.history-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px;font-family:inherit;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;transition:all .2s;width:100%;margin-top:8px}
+.history-btn:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.history-btn .arrow{transition:transform .3s ease;font-size:10px}
+.history-btn .arrow.open{transform:rotate(90deg)}
+.history-btn .count{margin-left:auto;font-size:11px;background:rgba(255,255,255,.06);padding:1px 8px;border-radius:10px}
+.history-panel{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease,margin .3s ease;opacity:0;margin-top:0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
+.history-panel::-webkit-scrollbar{width:4px}
+.history-panel::-webkit-scrollbar-track{background:transparent}
+.history-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+.history-panel.open{max-height:600px;overflow-y:auto;opacity:1;margin-top:4px}
+.room-history{background:rgba(0,0,0,.2);border-radius:8px;padding:10px 10px 8px;border:1px solid rgba(255,255,255,.04);margin-top:6px}
+.room-history:first-child{margin-top:0}
+.room-history-title{display:flex;align-items:center;justify-content:space-between;font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--text-dim);font-weight:600;margin-bottom:4px}
+.history-clear-btn{background:none;border:none;color:var(--red);font-size:10px;cursor:pointer;font-family:inherit;opacity:.6;transition:opacity .2s}
+.history-clear-btn:hover{opacity:1}
+.history-scroll{max-height:180px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
+.history-scroll::-webkit-scrollbar{width:4px}
+.history-scroll::-webkit-scrollbar-track{background:transparent}
+.history-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+.history-list{display:flex;flex-direction:column;gap:0;position:relative;padding-left:18px}
+.history-list::before{content:'';position:absolute;left:4px;top:4px;bottom:4px;width:1px;background:rgba(255,255,255,.08)}
+.history-entry{position:relative;padding:3px 0 3px 12px;display:flex;align-items:center;gap:6px;font-size:11px}
+.history-entry::before{content:'';position:absolute;left:-15px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;z-index:1}
+.history-entry.up::before{background:var(--green);box-shadow:0 0 5px rgba(52,211,153,.3)}
+.history-entry.down::before{background:var(--red);box-shadow:0 0 5px rgba(248,113,113,.3)}
+.history-entry.same::before{background:var(--text-dim)}
+.history-entry.first::before{background:var(--blue);box-shadow:0 0 5px rgba(96,165,250,.3)}
+.history-entry .entry-time{color:var(--text-dim);font-size:9px;min-width:50px;font-variant-numeric:tabular-nums}
+.history-entry .entry-price{font-weight:600;color:var(--text);font-size:11px}
+.history-entry .entry-diff{font-size:9px;font-weight:500}
+.history-entry .entry-diff.up{color:var(--green)}
+.history-entry .entry-diff.down{color:var(--red)}
+.history-entry .entry-del{margin-left:auto;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px;padding:0 3px;opacity:0;transition:opacity .2s;line-height:1}
+.history-entry:hover .entry-del{opacity:.6}
+.history-entry .entry-del:hover{opacity:1;color:var(--red)}
+.history-empty{text-align:center;padding:10px;font-size:11px;color:var(--text-dim);font-style:italic}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+.fade-in{animation:fadeIn .4s ease forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.empty-state{text-align:center;padding:80px 20px;color:var(--text-dim)}
+.empty-state h2{font-size:20px;font-weight:600;margin-bottom:8px;color:var(--text)}
+@media(max-width:700px){
+  .header{padding:20px 16px 16px}
+  .header h1{font-size:22px}
+  .header .status-bar{gap:10px;font-size:12px;flex-direction:column}
+  .container{padding:16px 12px 40px}
+  .grid{grid-template-columns:1fr;gap:12px}
+  .card{padding:18px}
+  .room-price{font-size:14px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Mason City Hotel Prices</h1>
+  <p class="subtitle" id="subtitle">Live room pricing across hotels &bull; Updates every 60s</p>
+  <div class="status-bar">
+    <span class="status-item"><span class="status-dot loading" id="statusDot"></span><span id="statusText">Loading...</span></span>
+    <span class="status-item">Next refresh in <span class="countdown" id="countdown">--</span>s</span>
+    <span class="status-item"><span id="countHotels">0</span> hotels</span>
+    <button class="refresh-btn" onclick="manualRefresh()">Refresh now</button>
+    <button class="clear-all-btn" id="clearAllBtn" onclick="clearAllHistory()" style="display:none">Clear all history</button>
+  </div>
+</div>
+<div class="container">
+  <div class="grid" id="hotelGrid"></div>
+  <div class="empty-state" id="emptyState" style="display:none"><h2>No hotels loaded</h2><p>Check the hotel links.txt file.</p></div>
+</div>
+
+<script>
+const ROOM_TYPES = ['2 Queen','Queen','Suite','Other'];
+const ROOM_LABELS = { '2 Queen':'2 Queen', Queen:'Queen', Suite:'Suite', Other:'Room' };
+
+const grid=document.getElementById('hotelGrid'), emptyState=document.getElementById('emptyState'),
+  statusDot=document.getElementById('statusDot'), statusText=document.getElementById('statusText'),
+  countdownEl=document.getElementById('countdown'), countHotels=document.getElementById('countHotels'),
+  clearAllBtn=document.getElementById('clearAllBtn');
+let countdownValue=60, countdownInterval=null;
+
+function startCountdown(s){if(countdownInterval)clearInterval(countdownInterval);countdownValue=s;countdownEl.textContent=s;countdownInterval=setInterval(()=>{countdownValue--;countdownEl.textContent=countdownValue<0?0:countdownValue},1000)}
+function timeAgo(i){if(!i)return'';const d=Math.floor((Date.now()-new Date(i).getTime())/1e3);if(d<10)return'just now';if(d<60)return d+'s ago';return Math.floor(d/60)+'m ago'}
+function fmtTime(i){if(!i)return'';const d=new Date(i);return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+function fmtDate(i){if(!i)return'';const d=new Date(i),t=new Date(),y=new Date(t);y.setDate(y.getDate()-1);if(d.toDateString()===t.toDateString())return'Today';if(d.toDateString()===y.toDateString())return'Yesterday';return d.toLocaleDateString([],{month:'short',day:'numeric'})}
+
+function toggleHistory(idx){const p=document.getElementById('history-panel-'+idx),a=document.getElementById('history-arrow-'+idx);if(!p)return;p.classList.toggle('open');if(a)a.classList.toggle('open')}
+
+async function deleteEntry(hIdx,aC,rT,eI){
+  try{
+    const r=await fetch(`/api/history/${hIdx}/adult/${aC}/room/${rT}/entry/${eI}`,{method:'DELETE'});
+    if(!r.ok)throw Error();
+    const el=document.getElementById('he-'+hIdx+'-'+aC+'-'+rT+'-'+eI);
+    if(el){
+      el.remove();
+      const p=document.getElementById('history-list-'+hIdx+'-'+aC+'-'+rT);
+      if(p&&!p.querySelector('.history-entry')){
+        const c=document.getElementById('room-history-'+hIdx+'-'+aC+'-'+rT);
+        if(c)c.innerHTML='<div class="history-empty">No price history yet</div>';
+      }
+    }
+  }catch(e){console.error(e)}
+}
+
+async function clearRoomHistory(hIdx,aC,rT){
+  try{const r=await fetch(`/api/history/${hIdx}/adult/${aC}/room/${rT}`,{method:'DELETE'});if(!r.ok)throw Error();await fetchData()}catch(e){console.error(e)}
+}
+async function clearWeekdayHistory(hIdx,aC,dateStr){
+  try{const r=await fetch(`/api/history/${hIdx}/adult/${aC}/weekday/${dateStr}`,{method:'DELETE'});if(!r.ok)throw Error();await fetchData()}catch(e){console.error(e)}
+}
+async function deleteWeekdayEntry(hIdx,aC,dateStr,eI){
+  try{
+    const r=await fetch(`/api/history/${hIdx}/adult/${aC}/weekday/${dateStr}/entry/${eI}`,{method:'DELETE'});
+    if(!r.ok)throw Error();
+    const el=document.getElementById('whe-'+hIdx+'-'+aC+'-'+dateStr+'-'+eI);
+    if(el){
+      el.remove();
+      const p=document.getElementById('weekday-history-list-'+hIdx+'-'+aC+'-'+dateStr);
+      if(p&&!p.querySelector('.history-entry')){
+        const c=document.getElementById('weekday-history-'+hIdx+'-'+aC+'-'+dateStr);
+        if(c)c.innerHTML='<div class="history-empty">No price history yet</div>';
+      }
+    }
+  }catch(e){console.error(e)}
+}
+async function clearAllHistory(){if(!confirm('Clear all history for all hotels?'))return;try{await fetch('/api/history',{method:'DELETE'});fetchData()}catch(e){}}
+
+function renderRoomHistory(hIdx, aC, rT, room){
+  const hist=room.history||[];
+  if(!hist.length)return`<div class="room-history" id="room-history-${hIdx}-${aC}-${rT}"><div class="room-history-title"><span>${ROOM_LABELS[rT]}</span></div><div class="history-empty">No price history yet</div></div>`;
+  const entries=[...hist].reverse();
+  let lastP=null;
+  const eh=entries.map((e,ei)=>{
+    const oi=hist.length-1-ei, p=e.price;
+    let cl='first',dh='';
+    if(lastP!==null){const d=lastP-p;if(d>0){cl='up';dh='<span class="entry-diff up">&#9650; +$'+d+'</span>'}else if(d<0){cl='down';dh='<span class="entry-diff down">&#9660; -$'+Math.abs(d)+'</span>'}else{cl='same';dh='<span class="entry-diff same">&mdash; $0</span>'}}
+    lastP=p;
+    return'<div class="history-entry '+cl+'" id="he-'+hIdx+'-'+aC+'-'+rT+'-'+oi+'"><span class="entry-time">'+fmtDate(e.date)+' '+fmtTime(e.date)+'</span><span class="entry-price">$'+p+'</span>'+dh+'<button class="entry-del" onclick="deleteEntry('+hIdx+','+aC+',\''+rT+'\','+oi+')" title="Delete entry">&times;</button></div>';
+  }).join('');
+  return'<div class="room-history" id="room-history-'+hIdx+'-'+aC+'-'+rT+'"><div class="room-history-title"><span>'+ROOM_LABELS[rT]+'</span><button class="history-clear-btn" onclick="clearRoomHistory('+hIdx+','+aC+',\''+rT+'\')">Clear</button></div><div class="history-scroll"><div class="history-list" id="history-list-'+hIdx+'-'+aC+'-'+rT+'">'+eh+'</div></div></div>';
+}
+
+function fmtShortDate(dateStr){
+  const d=new Date(dateStr+'T12:00:00');
+  return d.toLocaleDateString([],{month:'short',day:'numeric'});
+}
+
+function renderWeekPrices(weekPrices){
+  if(!weekPrices||!weekPrices.length)return'';
+  const days=weekPrices.map(d=>{
+    const hasP=d.price!==null;
+    let chg='';
+    if(hasP&&d.previousPrice!==null&&d.previousPrice!==undefined){
+      const diff=d.price-d.previousPrice;
+      if(diff>0)chg='<div class="week-day-change up">&#9650; +$'+diff+'</div>';
+      else if(diff<0)chg='<div class="week-day-change down">&#9660; -$'+Math.abs(diff)+'</div>';
+    }
+    const dayName=new Date(d.date+'T12:00:00').toLocaleDateString([],{weekday:'short'});
+    return'<div class="week-day'+(hasP?'':' missing')+'"><div class="week-day-label">'+dayName+' '+fmtShortDate(d.date)+'</div><div class="week-day-price">'+(hasP?'$'+d.price:'N/A')+'</div>'+chg+'</div>';
+  }).join('');
+  return'<div class="week-prices"><div class="week-prices-title">Nightly prices (next 7 days)</div><div class="week-prices-grid">'+days+'</div></div>';
+}
+
+function renderHotels(data){
+  const hl=data.hotels||[];
+  if(data.weekRange){
+    document.getElementById('subtitle').textContent='Live pricing &bull; Nightly rates '+fmtShortDate(data.weekRange.start)+' – '+fmtShortDate(data.weekRange.end)+' &bull; Updates every 60s';
+  }
+  countHotels.textContent=hl.length;
+  const hasH=hl.some(h=>h.adults.some(a=>ROOM_TYPES.some(t=>(a.rooms[t]?.history?.length||0)>0)));
+  clearAllBtn.style.display=hasH?'':'none';
+  if(!hl.length){grid.innerHTML='';emptyState.style.display='block';return}
+  emptyState.style.display='none';
+
+  const owned1=hl.filter(h=>h.isOwned).map(h=>h.adults.find(a=>a.count===1)).filter(a=>a).map(a=>a.currentPrice).filter(p=>p!==null);
+  const ownedMin1=owned1.length?Math.min(...owned1):Infinity;
+
+  const ownedRoomMin={};
+  for(const t of ROOM_TYPES){
+    const p1=hl.filter(h=>h.isOwned).map(h=>h.adults.find(a=>a.count===1)).filter(a=>a&&a.rooms[t]?.price!==null).map(a=>a.rooms[t].price);
+    ownedRoomMin[t]=p1.length?Math.min(...p1):Infinity;
+  }
+
+  const scatter=[...hl].map(h=>({...h,_sort:Math.random()})).sort((a,b)=>{
+    if(a.isOwned!==b.isOwned)return a.isOwned?-1:1;
+    const aM=Math.min(...a.adults.map(x=>x.currentPrice).filter(p=>p!==null)), bM=Math.min(...b.adults.map(x=>x.currentPrice).filter(p=>p!==null));
+    if(aM!==null&&bM!==null)return aM-bM;
+    if(aM!==null)return-1;if(bM!==null)return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  grid.innerHTML=scatter.map((h,idx)=>{
+    const ob=h.isOwned?'<div class="badge">&#9733; Your Hotel</div>':'';
+    const firstUrl=h.adults.find(a=>a.url)?.url||'#';
+
+    const adultHtml=h.adults.map(adult=>{
+      const roomRows=ROOM_TYPES.map(t=>{
+        const r=adult.rooms[t];
+        if(!r||(r.price===null&&!r.error))return'';
+        const hp=r.price!==null;
+        let rc='';
+        if(hp&&r.previousPrice!==null){
+          const d=r.price-r.previousPrice;
+          if(d>0)rc='<span class="room-change up">&#9650; +$'+d+'</span>';
+          else if(d<0)rc='<span class="room-change down">&#9660; -$'+Math.abs(d)+'</span>';
+          else rc='<span class="room-change same">&mdash;</span>';
+        }
+        const myMin=ownedRoomMin[t];
+        const bb=!h.isOwned&&hp&&myMin!==Infinity&&r.price<myMin;
+        const typeLabel=ROOM_LABELS[t];
+        return'<div class="room-row'+(bb?' below-owned':'')+'">'+(hp?'<span class="room-type">'+typeLabel+'</span>':'')+(hp?'<span class="room-price">$'+r.price+'</span><span class="room-unit">/nt</span>'+rc:'<span style="color:var(--text-dim);font-size:11px">N/A</span>')+'</div>';
+      }).join('');
+
+      if(!roomRows&&!adult.weekPrices?.length)return'';
+      return'<div class="adult-section">'+roomRows+renderWeekPrices(adult.weekPrices)+'</div>';
+    }).join('');
+
+    const totalHC=h.adults.reduce((s,a)=>s+ROOM_TYPES.reduce((ss,t)=>ss+(a.rooms[t]?.history?.length||0),0)+Object.values(a.weekPricesHistory||{}).reduce((ss,arr)=>ss+arr.length,0),0);
+    const historySections=h.adults.map(adult=>{
+      const rs=ROOM_TYPES.map(t=>renderRoomHistory(h.index,adult.count,t,adult.rooms[t])).join('');
+      const wph=adult.weekPricesHistory||{};
+      const weekDays=adult.weekPrices||[];
+      let weekHistHtml='';
+      if(weekDays.length>0){
+        weekHistHtml='<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border)"><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:var(--text-dim);margin-bottom:6px">Nightly Day Prices</div>';
+        for(const dayObj of weekDays){
+          const dateStr = dayObj.date;
+          const entries=wph[dateStr]||[];
+          const dayLabel=new Date(dateStr+'T12:00:00').toLocaleDateString([],{weekday:'short'})+' '+fmtShortDate(dateStr);
+          if(!entries.length){
+            weekHistHtml+='<div class="room-history" id="weekday-history-'+h.index+'-'+adult.count+'-'+dateStr+'"><div class="room-history-title"><span>'+dayLabel+'</span></div><div class="history-empty">No price history yet</div></div>';
+            continue;
+          }
+          const rev=[...entries].reverse();
+          let lastP=null;
+          const eh=rev.map((e,ei)=>{
+            const oi=entries.length-1-ei, p=e.price;
+            let cl='first',dh='';
+            if(lastP!==null){const d=lastP-p;if(d>0){cl='up';dh='<span class="entry-diff up">&#9650; +$'+d+'</span>'}else if(d<0){cl='down';dh='<span class="entry-diff down">&#9660; -$'+Math.abs(d)+'</span>'}else{cl='same';dh='<span class="entry-diff same">&mdash; $0</span>'}}
+            lastP=p;
+            return'<div class="history-entry '+cl+'" id="whe-'+h.index+'-'+adult.count+'-'+dateStr+'-'+oi+'"><span class="entry-time">'+fmtDate(e.date)+' '+fmtTime(e.date)+'</span><span class="entry-price">$'+p+'</span>'+dh+'<button class="entry-del" onclick="deleteWeekdayEntry('+h.index+','+adult.count+',\''+dateStr+'\','+oi+')" title="Delete entry">&times;</button></div>';
+          }).join('');
+          weekHistHtml+='<div class="room-history" id="weekday-history-'+h.index+'-'+adult.count+'-'+dateStr+'"><div class="room-history-title"><span>'+dayLabel+'</span><button class="history-clear-btn" onclick="clearWeekdayHistory('+h.index+','+adult.count+',\''+dateStr+'\')">Clear</button></div><div class="history-scroll"><div class="history-list" id="weekday-history-list-'+h.index+'-'+adult.count+'-'+dateStr+'">'+eh+'</div></div></div>';
+        }
+        weekHistHtml+='</div>';
+      }
+      return(rs||weekHistHtml)?'<div class="adult-section">'+rs+weekHistHtml+'</div>':'';
+    }).join('');
+
+    const lastDate=h.adults.reduce((latest,a)=>ROOM_TYPES.reduce((la,t)=>{const e=a.rooms[t]?.history?.slice?.(-1)?.[0];return e&&(!la||e.date>la)?e.date:la;},latest),null);
+    return'<div class="card'+(h.isOwned?' owned':'')+'" style="animation-delay:'+(idx*.04)+'s">'+ob+'<div class="card-name">'+h.name+' <a class="room-link" href="'+firstUrl+'" target="_blank" rel="noopener">Open</a></div>'+adultHtml+'<div class="card-meta"><span>Updated '+timeAgo(lastDate)+'</span></div><button class="history-btn" onclick="toggleHistory('+h.index+')"><span class="arrow" id="history-arrow-'+h.index+'">&#9654;</span> Price History <span class="count">'+totalHC+'</span></button><div class="history-panel" id="history-panel-'+h.index+'">'+historySections+'</div></div>';
+  }).join('');
+
+  requestAnimationFrame(()=>{document.querySelectorAll('.card').forEach((el,i)=>{el.style.opacity='0';el.classList.add('fade-in')})});
+}
+
+function setStatus(s){statusDot.className='status-dot';if(s==='ok'){statusText.textContent='Live'}else if(s==='error'){statusDot.classList.add('error');statusText.textContent='Error'}else{statusDot.classList.add('loading');statusText.textContent='Loading...'}}
+
+async function fetchData(){
+  try{
+    const r=await fetch('/api/hotels');if(!r.ok)throw Error();
+    const d=await r.json();renderHotels(d);
+    if(d.nextScrape){const rm=Math.floor((new Date(d.nextScrape)-Date.now())/1e3);startCountdown(Math.max(rm,0))}
+    setStatus('ok');return d;
+  }catch(e){setStatus('error');statusText.textContent='Connection error';console.error(e)}
+}
+
+async function manualRefresh(){
+  const btn=document.querySelector('.refresh-btn');btn.disabled=true;btn.textContent='Refreshing...';setStatus('loading');
+  try{await fetch('/api/refresh');await fetchData()}catch(e){setStatus('error');statusText.textContent='Refresh failed'}
+  finally{btn.disabled=false;btn.textContent='Refresh now'}
+}
+
+fetchData();
+setInterval(fetchData,60000);
+</script>
+</body>
+</html>
